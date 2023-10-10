@@ -36,7 +36,7 @@ public class DataLoadingService implements InitializingBean {
 
 	private VectorStore vectorStore;
 
-	@Value("${spring.ai.openai.test.skip-loading:false}")
+	@Value("${spring.ai.openai.test.skip-loading}")
 	private Boolean skipLoading = false;
 
 	public DataLoadingService(Resource pdfResource, VectorStore vectorStore) {
@@ -57,8 +57,6 @@ public class DataLoadingService implements InitializingBean {
 		PdfPerPagesDocumentReader pdfReader = new PdfPerPagesDocumentReader(
 				this.pdfResource,
 				PdfDocumentReaderConfig.builder()
-						.withPageTopMargin(0)
-						.withPageBottomMargin(0)
 						.withPageExtractedTextFormatter(PageExtractedTextFormatter.builder()
 								.withNumberOfBottomTextLinesToDelete(3)
 								.withNumberOfTopPagesToSkipBeforeDelete(1)
@@ -68,11 +66,10 @@ public class DataLoadingService implements InitializingBean {
 
 		var textSplitter = new TokenTextSplitter();
 
-		// ((PgVectorStore) this.vectorStore).start();
-
 		var docs1 = pdfReader.get();
 		var splitterVar = textSplitter.apply(docs1);
 		this.vectorStore.accept(splitterVar);
+
 		System.out.println("Exit loader");
 	}
 

@@ -45,8 +45,8 @@ import org.springframework.retry.annotation.EnableRetry;
 @EnableRetry
 public class Config {
 
-	// @Value("file:src/main/resources/data/uber-k-10.pdf")
-	@Value("file:src/main/resources/data/lyft-k-10.pdf")
+	@Value("file:src/main/resources/data/uber-10-k.pdf")
+	// @Value("file:src/main/resources/data/lyft-10-k.pdf")
 	private Resource resource;
 
 	@Bean
@@ -66,7 +66,7 @@ public class Config {
 
 	@Bean
 	public VectorStoreRetriever vectorStoreRetriever(VectorStore vectorStore) {
-		return new VectorStoreRetriever(vectorStore, 4);
+		return new VectorStoreRetriever(vectorStore, 5, 0.75);
 	}
 
 	@Bean
