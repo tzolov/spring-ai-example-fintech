@@ -63,7 +63,7 @@ public class FinancialQAService {
 		// 1. Retrieve related (to the message) documents form the vector store.
 		List<Document> similarDocuments = this.vectorStoreRetriever.retrieve(question);
 
-		similarDocuments.stream().map(d -> d.getContent()).forEach(System.out::println);
+		// similarDocuments.stream().map(d -> d.getContent()).forEach(System.out::println);
 
 		// 2. Embed documents into SystemMessage with the `system-qa.st` prompt template
 		Message systemMessage = getSystemMessage(similarDocuments);
@@ -83,7 +83,9 @@ public class FinancialQAService {
 
 	private Message getSystemMessage(List<Document> similarDocuments) {
 
-		String documents = similarDocuments.stream().map(entry -> entry.getContent()).collect(Collectors.joining("\n"));
+		// String documents = similarDocuments.stream().map(document -> document.getFormattedContent()).collect(Collectors.joining("\n\n"));
+		String documents = similarDocuments.stream().map(document -> document.getContent()).collect(Collectors.joining("\n"));
+
 		SystemPromptTemplate systemPromptTemplate = new SystemPromptTemplate(this.systemBikePrompt);
 		Message systemMessage = systemPromptTemplate.createMessage(Map.of("documents", documents));
 		return systemMessage;

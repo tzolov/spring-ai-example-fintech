@@ -45,7 +45,7 @@ import org.springframework.retry.annotation.EnableRetry;
 @EnableRetry
 public class Config {
 
-	@Value("file:src/main/resources/data/uber-10-k.pdf")
+	@Value("file:src/main/resources/data/uber-10-k-2022.pdf")
 	// @Value("file:src/main/resources/data/lyft-10-k.pdf")
 	private Resource resource;
 

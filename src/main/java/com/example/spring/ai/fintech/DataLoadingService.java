@@ -16,8 +16,8 @@
 
 package com.example.spring.ai.fintech;
 
-import org.springframework.ai.reader.pdf.PdfDocumentReaderConfig;
-import org.springframework.ai.reader.pdf.PdfPerPagesDocumentReader;
+import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
+import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.ai.reader.pdf.layout.PageExtractedTextFormatter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -54,12 +54,13 @@ public class DataLoadingService implements InitializingBean {
 			return;
 		}
 
-		PdfPerPagesDocumentReader pdfReader = new PdfPerPagesDocumentReader(
+		PagePdfDocumentReader pdfReader = new PagePdfDocumentReader(
 				this.pdfResource,
 				PdfDocumentReaderConfig.builder()
 						.withPageExtractedTextFormatter(PageExtractedTextFormatter.builder()
 								.withNumberOfBottomTextLinesToDelete(3)
 								.withNumberOfTopPagesToSkipBeforeDelete(1)
+								// .withLeftAlignment(true)
 								.build())
 						.withPagesPerDocument(1)
 						.build());
@@ -68,6 +69,7 @@ public class DataLoadingService implements InitializingBean {
 
 		var docs1 = pdfReader.get();
 		var splitterVar = textSplitter.apply(docs1);
+
 		this.vectorStore.accept(splitterVar);
 
 		System.out.println("Exit loader");
