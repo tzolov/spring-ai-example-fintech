@@ -3,7 +3,8 @@
 
 ## PGVectorStore
 
-To run the PgVecgtorStore locally, go to the `src/main/resources/docker` directory and run:
+To run the PgVectorStore locally, using docker-compose.
+From the top project directory and run:
 
 ```
 docker-compose up

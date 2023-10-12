@@ -32,6 +32,7 @@ import org.springframework.ai.prompt.messages.UserMessage;
 import org.springframework.ai.retriever.VectorStoreRetriever;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.util.Assert;
 
@@ -57,7 +58,7 @@ public class FinancialQAService {
 		this.vectorStoreRetriever = vectorStoreRetriever;
 	}
 
-	@Retryable
+	@Retryable(maxAttempts = 8, backoff = @Backoff(delay = 2000, multiplier = 5, maxDelay = 3 * 60000))
 	public Generation query(String question, String companyName) {
 
 		// 1. Retrieve related (to the message) documents form the vector store.
@@ -76,6 +77,7 @@ public class FinancialQAService {
 
 		// 4. Ask the AI model
 		Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
+		// System.out.println("QUERY ATTEMPT for : " + question);
 		AiResponse response = this.aiClient.generate(prompt);
 
 		return response.getGeneration();
@@ -83,8 +85,10 @@ public class FinancialQAService {
 
 	private Message getSystemMessage(List<Document> similarDocuments) {
 
-		// String documents = similarDocuments.stream().map(document -> document.getFormattedContent()).collect(Collectors.joining("\n\n"));
-		String documents = similarDocuments.stream().map(document -> document.getContent()).collect(Collectors.joining("\n"));
+		// String documents = similarDocuments.stream().map(document ->
+		// document.getFormattedContent()).collect(Collectors.joining("\n\n"));
+		String documents = similarDocuments.stream().map(document -> document.getContent())
+				.collect(Collectors.joining("\n"));
 
 		SystemPromptTemplate systemPromptTemplate = new SystemPromptTemplate(this.systemBikePrompt);
 		Message systemMessage = systemPromptTemplate.createMessage(Map.of("documents", documents));

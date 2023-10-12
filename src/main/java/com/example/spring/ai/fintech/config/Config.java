@@ -16,11 +16,16 @@
 
 package com.example.spring.ai.fintech.config;
 
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import javax.sql.DataSource;
 
 import com.example.spring.ai.fintech.DataLoadingService;
 import com.example.spring.ai.fintech.FinancialQAService;
+import com.theokanning.openai.OpenAiHttpException;
 import com.zaxxer.hikari.HikariDataSource;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.ai.client.AiClient;
 import org.springframework.ai.embedding.EmbeddingClient;
@@ -35,7 +40,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.retry.RetryCallback;
+import org.springframework.retry.RetryContext;
+import org.springframework.retry.RetryListener;
 import org.springframework.retry.annotation.EnableRetry;
+import org.springframework.retry.backoff.BackOffContext;
+import org.springframework.retry.support.Args;
+
+import org.slf4j.Logger;
 
 /**
  *
@@ -45,9 +57,52 @@ import org.springframework.retry.annotation.EnableRetry;
 @EnableRetry
 public class Config {
 
+	private static final Logger logger = LoggerFactory.getLogger(Config.class);
+
 	@Value("file:src/main/resources/data/uber-10-k-2022.pdf")
 	// @Value("file:src/main/resources/data/lyft-10-k.pdf")
 	private Resource resource;
+
+	@Bean
+	public RetryListener retryListener() {
+		return new RetryListener() {
+			@Override
+			public <T, E extends Throwable> void onError(RetryContext context,
+					RetryCallback<T, E> callback,
+					Throwable throwable) {
+
+				var name = context.getAttribute(RetryContext.NAME);
+				var args = context.getAttribute("ARGS");
+				BackOffContext backOffContext = (BackOffContext) context.getAttribute("backOffContext");
+
+				if (throwable instanceof OpenAiHttpException oahex) {
+ 					if ("context_length_exceeded".equals(oahex.code)) {
+						logger.error(throwable.getMessage() +
+								"\n - abort retries!" +
+								"\n - name: " + name +
+								"\n - arguments: " + toString(args));
+						context.setExhaustedOnly();
+						return;
+					}
+				}
+				logger.warn(throwable.getMessage() +
+						"\n - name: " + name +
+						"\n - arguments: " + toString(args) +
+						"\n - Retry#: " + context.getRetryCount());
+			}
+
+			private String toString(Object args) {
+				if (args == null)
+					return "";
+				if (args instanceof Args) {
+					return Stream.of(((Args) args).getArgs())
+							.map(a -> a.toString())
+							.collect(Collectors.joining(", "));
+				}
+				return args.toString();
+			}
+		};
+	}
 
 	@Bean
 	public FinancialQAService financialQAService(AiClient aiClient, VectorStoreRetriever vectorStoreRetriever) {

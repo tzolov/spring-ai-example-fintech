@@ -67,10 +67,9 @@ public class DataLoadingService implements InitializingBean {
 
 		var textSplitter = new TokenTextSplitter();
 
-		var docs1 = pdfReader.get();
-		var splitterVar = textSplitter.apply(docs1);
-
-		this.vectorStore.accept(splitterVar);
+		this.vectorStore.accept(
+				textSplitter.apply(
+						pdfReader.get()));
 
 		System.out.println("Exit loader");
 	}
